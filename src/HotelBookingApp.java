@@ -1,61 +1,55 @@
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * UC11: Concurrent Booking Simulation (Thread Safety)
- * Concept: Synchronization to prevent Race Conditions in multi-threaded environments.
- */
 public class HotelBookingApp {
-    private static List<Room> roomInventory = new ArrayList<>();
+    private static final String FILE_NAME = "inventory.dat";
 
     public static void main(String[] args) {
-        System.out.println("--- Welcome to Book My Stay App [Multi-Threaded] ---");
+        System.out.println("--- Welcome to Book My Stay App [Persistence Mode] ---");
 
-        // Initialize Inventory
-        roomInventory.add(new Room(101, "Standard"));
-        roomInventory.add(new Room(102, "Standard"));
+        List<Room> roomInventory;
 
-        // Simulate two guests trying to book the SAME room (101) at the same time
-        Runnable guest1 = () -> bookRoom(101, "Guest A");
-        Runnable guest2 = () -> bookRoom(101, "Guest B");
+        // 1. Attempt to Recovery Data from File
+        roomInventory = loadData();
 
-        Thread thread1 = new Thread(guest1);
-        Thread thread2 = new Thread(guest2);
-
-        System.out.println("Starting concurrent booking requests...");
-        thread1.start();
-        thread2.start();
-
-        try {
-            thread1.join();
-            thread2.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        // 2. If no data exists, initialize fresh data
+        if (roomInventory.isEmpty()) {
+            System.out.println("No saved state found. Initializing fresh inventory...");
+            roomInventory.add(new Room(101, "Standard"));
+            roomInventory.add(new Room(201, "Deluxe"));
+            roomInventory.get(0).setAvailable(false); // Manually occupy one for testing
+        } else {
+            System.out.println("System Recovery Successful!");
         }
 
-        System.out.println("\n--- Final System State ---");
-        for (Room r : roomInventory) {
-            System.out.println(r);
+        // 3. Display Current State
+        System.out.println("\n--- Current Room Inventory ---");
+        for (Room r : roomInventory) System.out.println(r);
+
+        // 4. Save State before Exit
+        saveData(roomInventory);
+        System.out.println("\nSystem state persisted to " + FILE_NAME + ". exiting...");
+    }
+
+    private static void saveData(List<Room> data) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
+            oos.writeObject(data);
+        } catch (IOException e) {
+            System.out.println("Error saving data: " + e.getMessage());
         }
     }
 
-    /**
-     * The 'synchronized' keyword ensures only one thread enters this block at a time.
-     * This prevents "Double Booking" (Race Condition).
-     */
-    public static synchronized void bookRoom(int roomNumber, String guestName) {
-        for (Room room : roomInventory) {
-            if (room.getRoomNumber() == roomNumber) {
-                if (room.isAvailable()) {
-                    // Simulate processing time
-                    try { Thread.sleep(100); } catch (InterruptedException e) {}
+    @SuppressWarnings("unchecked")
+    private static List<Room> loadData() {
+        File file = new File(FILE_NAME);
+        if (!file.exists()) return new ArrayList<>();
 
-                    room.setAvailable(false);
-                    System.out.println(guestName + " successfully booked Room " + roomNumber);
-                } else {
-                    System.out.println(guestName + " failed: Room " + roomNumber + " is already occupied.");
-                }
-            }
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(FILE_NAME))) {
+            return (List<Room>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Recovery failed: " + e.getMessage());
+            return new ArrayList<>();
         }
     }
 }
