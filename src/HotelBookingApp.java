@@ -11,29 +11,23 @@ public class HotelBookingApp {
         roomInventory.add(new Room(201, "Deluxe"));
         roomInventory.add(new Room(301, "Suite"));
 
-        // Pre-condition: Room 201 is currently occupied (from UC4)
-        roomInventory.get(2).setAvailable(false);
-        System.out.println("Initial State: Room 201 is Occupied.");
+        // Pre-condition: Occupy some rooms to test filtering
+        roomInventory.get(0).setAvailable(false); // Room 101 occupied
+        roomInventory.get(2).setAvailable(false); // Room 201 occupied
 
-        // UC5: Cancellation Logic
-        int cancelRoom = 201;
-        System.out.println("\nProcessing Cancellation for Room #" + cancelRoom + "...");
+        // UC6: Capacity Check (Show only Available Rooms)
+        System.out.println("\nChecking System Capacity...");
+        int availableCount = 0;
 
+        System.out.println("--- Available Rooms List ---");
         for (Room room : roomInventory) {
-            if (room.getRoomNumber() == cancelRoom) {
-                if (!room.isAvailable()) {
-                    room.setAvailable(true); // Reset status to Available
-                    System.out.println("Success: Cancellation processed. Room " + cancelRoom + " is now available.");
-                } else {
-                    System.out.println("Alert: Room " + cancelRoom + " was already available.");
-                }
+            if (room.isAvailable()) {
+                System.out.println(room);
+                availableCount++;
             }
         }
 
-        // Verification
-        System.out.println("\n--- Current Status of Inventory ---");
-        for (Room r : roomInventory) {
-            System.out.println(r);
-        }
+        System.out.println("\nSummary: " + availableCount + " out of " +
+                roomInventory.size() + " rooms are currently available.");
     }
 }
