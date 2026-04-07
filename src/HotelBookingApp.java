@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 public class HotelBookingApp {
@@ -7,21 +6,20 @@ public class HotelBookingApp {
         System.out.println("--- Welcome to Book My Stay App ---");
 
         List<Room> roomInventory = new ArrayList<>();
-        // Adding rooms in non-sequential order to test sorting
-        roomInventory.add(new Room(301, "Suite"));
         roomInventory.add(new Room(101, "Standard"));
-        roomInventory.add(new Room(201, "Deluxe"));
         roomInventory.add(new Room(102, "Standard"));
+        roomInventory.add(new Room(201, "Deluxe"));
+        roomInventory.add(new Room(301, "Suite"));
 
-        System.out.println("\nInventory Before Sorting:");
-        for (Room r : roomInventory) System.out.println(r);
+        // UC8: Advanced Filtering - Show only Premium Rooms
+        System.out.println("\n--- Filtering Premium Rooms ---");
 
-        // UC7: Sorting Logic using Comparator
-        roomInventory.sort(Comparator.comparingInt(Room::getRoomNumber));
-
-        System.out.println("\nInventory After Sorting (By Room Number):");
-        for (Room r : roomInventory) {
-            System.out.println(r);
+        for (Room room : roomInventory) {
+            // Check if category is either Deluxe or Suite
+            if (room.getCategory().equalsIgnoreCase("Deluxe") ||
+                    room.getCategory().equalsIgnoreCase("Suite")) {
+                System.out.println("[PREMIUM] " + room);
+            }
         }
     }
 }
