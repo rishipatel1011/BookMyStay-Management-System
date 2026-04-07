@@ -1,55 +1,61 @@
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 
 /**
- * UC10: Booking Cancellation & Inventory Rollback
- * Concept: Stack Data Structure (LIFO) for undoing operations.
+ * UC11: Concurrent Booking Simulation (Thread Safety)
+ * Concept: Synchronization to prevent Race Conditions in multi-threaded environments.
  */
 public class HotelBookingApp {
-    public static void main(String[] args) {
-        System.out.println("--- Welcome to Book My Stay App ---");
+    private static List<Room> roomInventory = new ArrayList<>();
 
-        List<Room> roomInventory = new ArrayList<>();
+    public static void main(String[] args) {
+        System.out.println("--- Welcome to Book My Stay App [Multi-Threaded] ---");
+
+        // Initialize Inventory
         roomInventory.add(new Room(101, "Standard"));
         roomInventory.add(new Room(102, "Standard"));
-        roomInventory.add(new Room(201, "Deluxe"));
 
-        // Stack to keep track of booking history for rollback
-        Stack<Integer> bookingRollbackStack = new Stack<>();
+        // Simulate two guests trying to book the SAME room (101) at the same time
+        Runnable guest1 = () -> bookRoom(101, "Guest A");
+        Runnable guest2 = () -> bookRoom(101, "Guest B");
 
-        // 1. Simulate a series of bookings
-        System.out.println("\n--- Processing Bookings ---");
-        int[] roomsToBook = {101, 102, 201};
+        Thread thread1 = new Thread(guest1);
+        Thread thread2 = new Thread(guest2);
 
-        for (int roomNum : roomsToBook) {
-            for (Room r : roomInventory) {
-                if (r.getRoomNumber() == roomNum && r.isAvailable()) {
-                    r.setAvailable(false);
-                    bookingRollbackStack.push(roomNum); // Record for rollback
-                    System.out.println("Booked: Room " + roomNum);
-                }
-            }
+        System.out.println("Starting concurrent booking requests...");
+        thread1.start();
+        thread2.start();
+
+        try {
+            thread1.join();
+            thread2.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
-        // 2. UC10: Rollback Logic (Undo the last booking)
-        System.out.println("\n--- Initiating Cancellation Rollback (LIFO) ---");
-        if (!bookingRollbackStack.isEmpty()) {
-            int lastBookedRoom = bookingRollbackStack.pop();
-            System.out.println("Rolling back last transaction: Room " + lastBookedRoom);
-
-            for (Room r : roomInventory) {
-                if (r.getRoomNumber() == lastBookedRoom) {
-                    r.setAvailable(true); // Restore inventory
-                    System.out.println("Status: Room " + lastBookedRoom + " is now Available again.");
-                }
-            }
-        }
-
-        // Final Inventory Check
         System.out.println("\n--- Final System State ---");
         for (Room r : roomInventory) {
             System.out.println(r);
+        }
+    }
+
+    /**
+     * The 'synchronized' keyword ensures only one thread enters this block at a time.
+     * This prevents "Double Booking" (Race Condition).
+     */
+    public static synchronized void bookRoom(int roomNumber, String guestName) {
+        for (Room room : roomInventory) {
+            if (room.getRoomNumber() == roomNumber) {
+                if (room.isAvailable()) {
+                    // Simulate processing time
+                    try { Thread.sleep(100); } catch (InterruptedException e) {}
+
+                    room.setAvailable(false);
+                    System.out.println(guestName + " successfully booked Room " + roomNumber);
+                } else {
+                    System.out.println(guestName + " failed: Room " + roomNumber + " is already occupied.");
+                }
+            }
         }
     }
 }
