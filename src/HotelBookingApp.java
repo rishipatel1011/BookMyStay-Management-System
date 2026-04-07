@@ -1,36 +1,55 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 /**
- * UC2: Persistence Simulation
- * Concept: Maintaining a consistent state of data throughout the app lifecycle.
+ * UC10: Booking Cancellation & Inventory Rollback
+ * Concept: Stack Data Structure (LIFO) for undoing operations.
  */
 public class HotelBookingApp {
-    // Static list to simulate a database that persists while the app is running
-    private static List<Room> roomDatabase = new ArrayList<>();
-
     public static void main(String[] args) {
         System.out.println("--- Welcome to Book My Stay App ---");
 
-        // UC9: Initialize Persistence Store
-        initializeDatabase();
+        List<Room> roomInventory = new ArrayList<>();
+        roomInventory.add(new Room(101, "Standard"));
+        roomInventory.add(new Room(102, "Standard"));
+        roomInventory.add(new Room(201, "Deluxe"));
 
-        System.out.println("\nSystem Check: Loading Data from Persistence Store...");
-        displayInventory();
-    }
+        // Stack to keep track of booking history for rollback
+        Stack<Integer> bookingRollbackStack = new Stack<>();
 
-    private static void initializeDatabase() {
-        roomDatabase.add(new Room(101, "Standard"));
-        roomDatabase.add(new Room(102, "Standard"));
-        roomDatabase.add(new Room(201, "Deluxe"));
-        roomDatabase.add(new Room(301, "Suite"));
-        System.out.println("Status: Data successfully persisted to local storage.");
-    }
+        // 1. Simulate a series of bookings
+        System.out.println("\n--- Processing Bookings ---");
+        int[] roomsToBook = {101, 102, 201};
 
-    private static void displayInventory() {
-        System.out.println("--- Current System Inventory ---");
-        for (Room room : roomDatabase) {
-            System.out.println(room);
+        for (int roomNum : roomsToBook) {
+            for (Room r : roomInventory) {
+                if (r.getRoomNumber() == roomNum && r.isAvailable()) {
+                    r.setAvailable(false);
+                    bookingRollbackStack.push(roomNum); // Record for rollback
+                    System.out.println("Booked: Room " + roomNum);
+                }
+            }
+        }
+
+        // 2. UC10: Rollback Logic (Undo the last booking)
+        System.out.println("\n--- Initiating Cancellation Rollback (LIFO) ---");
+        if (!bookingRollbackStack.isEmpty()) {
+            int lastBookedRoom = bookingRollbackStack.pop();
+            System.out.println("Rolling back last transaction: Room " + lastBookedRoom);
+
+            for (Room r : roomInventory) {
+                if (r.getRoomNumber() == lastBookedRoom) {
+                    r.setAvailable(true); // Restore inventory
+                    System.out.println("Status: Room " + lastBookedRoom + " is now Available again.");
+                }
+            }
+        }
+
+        // Final Inventory Check
+        System.out.println("\n--- Final System State ---");
+        for (Room r : roomInventory) {
+            System.out.println(r);
         }
     }
 }
